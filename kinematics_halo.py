@@ -200,49 +200,14 @@ class data:
 
 
     def readdata(self):
-        self.dat = np.loadtxt(self.fname)#, skiprows=1)
+        self.dat = np.loadtxt(self.fname, skiprows=1)
 
-        if self.dataset == "gse":
+        if self.dataset == 'halo':
             self.header_sim = ["x", "y", "z", "vx", "vy", "vz",
                            "l", "b", "dist", "vlos", "dmu_l", "dmu_b",
                            "edist", "evlost", "edmu_l", "edmu_b",
-                           "rapo", "gse", "sdss"]
+                           "rapo", "quality", "sdss"]
 
-        elif self.dataset == 'disc':
-            self.header_sim = ["x", "y", "z", "vx", "vy", "vz",
-                           "l", "b", "dist", "vlos", "dmu_l", "dmu_b",
-                           "edist", "evlost", "edmu_l", "edmu_b",
-                           "rapo", "disc", "sdss", "dead1", "dead2",
-                           "dead3", "corr"]
-        elif self.dataset == 'sgr':
-            self.header_sim = ["x", "y", "z", "vx", "vy", "vz",
-                           "l", "b", "dist", "vlos", "dmu_l", "dmu_b",
-                           "edist", "evlost", "edmu_l", "edmu_b",
-                           "rapo", "sgr", "sdss", "dead1", "dead2",
-                           "dead3", "corr"]
-        elif self.dataset == 'halo':
-            self.header_sim = ["x", "y", "z", "vx", "vy", "vz",
-                           "l", "b", "dist", "vlos", "dmu_l", "dmu_b",
-                           "edist", "evlost", "edmu_l", "edmu_b",
-                           "rapo", "halo", "sdss"]
-
-        elif self.dataset == 'all':
-            self.header_sim = ["x", "y", "z", "vx", "vy", "vz",
-                           "l", "b", "dist", "vlos", "dmu_l", "dmu_b",
-                           "edist", "evlost", "edmu_l", "edmu_b",
-                           "rapo", "sgr", "sdss", "dead1", "dead2",
-                           "dead3", "corr"]
-
-        elif self.dataset == 'oc':
-            self.header_sim = ["x", "y", "z", "vx", "vy", "vz",
-                           "l", "b", "dist", "vlos", "dmu_l", "dmu_b",
-                           "edist", "evlost", "edmu_l", "edmu_b",
-                           "rapo", "gse", "sdss", "dead1", "dead2",
-                           "dead3", "corr"]
-
-        elif self.dataset == 'real':
-            self.header_sim = ["x", "y", "z", "vx", "vy", "vz", "l", "b", "dist", "vlos", "dmu_l", "dmu_b", "edist",
-                               "evlost", "edmu_l", "edmu_b"]
 
         elif self.dataset == 'GCcat':
             self.header_sim = ["x", "y", "z", "vx", "vy", "vz", "l", "b", "dist", "vlos", "dmu_l", "dmu_b", "edist",
@@ -265,67 +230,12 @@ class data:
         #Compute fraction of gse/sgr stars in sample to maintain.
         if self.dataset=='halo':
             self.f =1
-        elif self.dataset == 'gse' or self.dataset == 'sgr':
-            self.f = len(self.df[self.df[self.dataset] ==1])/len(self.df['x'])
-        elif self.dataset == 'all':
-            self.fsgr  = 0.22
-            self.fgse  = 0.33
-            self.fhalo = 0.45
-        elif self.dataset == 'oc':
-            self.fsgr  = 0.33
-            self.foc   = 0.04
-            self.fhalo = 0.63
-        else:
-            pass
 
-        if (self.ndraw is not None) & (self.dataset == 'sgr' or self.dataset == 'gse'):
-            fsub = 0.
-            tol = 0.05
-            while True:
-                if abs(fsub - self.f) < tol:
-                    break
-                tmpdf = self.df.sample(n=self.ndraw)
-                fsub  = len(tmpdf[tmpdf[self.dataset] ==1])/len(tmpdf['x'])
-                #print(abs(fsub - self.f))
-            self.df = tmpdf
-
-        elif (self.ndraw is not None) & (self.dataset == 'halo'):
+        if (self.ndraw is not None) & (self.dataset == 'halo'):
             tmpdf = self.df[self.df[self.dataset] == 0] #choose halo stars only
             print(len(tmpdf))
             self.df = tmpdf.sample(n=self.ndraw)
 
-        elif (self.ndraw is not None) & (self.dataset == 'all'):
-            fsubsgr = 0.
-            fsubgse = 0.
-            fsubhalo= 0.
-            tol = 0.08
-            while True:
-                if (abs(fsubsgr - self.fsgr) < tol) & (abs(fsubgse - self.fgse) < tol) & (abs(fsubhalo < self.fhalo) < tol):
-                    break
-                tmpdf = self.df.sample(n=self.ndraw)
-                fsubsgr  = len(tmpdf[tmpdf['sgr'] ==2])/len(tmpdf['x'])
-                fsubgse  = len(tmpdf[tmpdf['sgr'] ==1])/len(tmpdf['x'])
-                fsubhalo = len(tmpdf[tmpdf['sgr'] ==0])/len(tmpdf['x'])
-
-                print(fsubsgr, fsubhalo, fsubgse)
-            self.df = tmpdf
-
-        elif (self.ndraw is not None) & (self.dataset == 'oc'):
-            fsubsgr = 0.
-            fsuboc = 0.
-            fsubhalo= 0.
-            tol = 0.05
-            octol = 0.005
-            while True:
-                if (abs(fsubsgr - self.fsgr) < tol) & (abs(fsuboc - self.foc) < tol) & (abs(fsubhalo < self.fhalo) < tol):
-                    break
-                tmpdf = self.df.sample(n=self.ndraw)
-                fsubsgr  = len(tmpdf[tmpdf['gse'] ==2])/len(tmpdf['x'])
-                fsubgse  = len(tmpdf[tmpdf['gse'] ==1])/len(tmpdf['x'])
-                fsubhalo = len(tmpdf[tmpdf['gse'] ==0])/len(tmpdf['x'])
-
-                print(fsubsgr, fsubhalo, fsubgse)
-            self.df = tmpdf
         else:
             print("No samples drawn")
         return
@@ -656,70 +566,34 @@ class data:
         return print("Sgr Beta Computed with Law & Majewski Angles")
 
     def save_df(self, fname):
-        if self.dataset == "gse":
+        if self.dataset == "halo":
+            dat = np.array([self.x, self.y, self.z, self.vx, self.vy, self.vz,
+                            self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
+                            self.elx, self.ely, self.elz, self.evx, self.evy, self.evz,
+                            self.elx, self.ely, self.elz, self.cxy, self.cxz, self.cyz,
+                            np.array(self.df['rapo']), np.array(self.df['sdss'])])
+
+        elif (self.dataset == "halo") & (self.bcut_method == "Majewski"):
+
             dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-            self.cxy, self.cxz, self.cyz, np.array(self.df['gse']), np.array(self.df['sdss'])])
-        elif self.dataset == "disc":
+                            self.cxy, self.cxz, self.cyz, self.sgrb, np.array(self.df['gse']),
+                            np.array(self.df['sdss'])])
+            if self.bcut is not None:
+                bcut = np.where(np.abs(self.sgrb) < self.bcut)[0]
+                dat = dat[:, bcut]
+                # fafter = len(np.where(dat[-2, :] == 2)[0])/len(dat[0,:])
+                print("Sgr plane cut performed")
+
+        elif (self.dataset == "halo") & (self.bcut_method == "angmom"):
+            print("performing plane cut")
             dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-            self.cxy, self.cxz, self.cyz, np.array(self.df['disc']), np.array(self.df['sdss'])])
-        elif self.dataset == "sgr":
-            dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-            self.cxy, self.cxz, self.cyz, np.array(self.df['sgr']), np.array(self.df['sdss'])])
-        elif self.dataset == "halo":
-            dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-            self.cxy, self.cxz, self.cyz, np.array(self.df['halo']), np.array(self.df['sdss'])])
-        elif self.dataset == "all":
-            dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-            self.cxy, self.cxz, self.cyz, self.sgrb, np.array(self.df['sgr']), np.array(self.df['sdss'])])
+                            self.cxy, self.cxz, self.cyz, self.progb])
 
-        elif self.dataset == "oc":
-
-            if self.bcut_method == "Majewski":
-
-                dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-                                self.cxy, self.cxz, self.cyz, self.sgrb, np.array(self.df['gse']),
-                                np.array(self.df['sdss'])])
-                if self.bcut is not None:
-                    bcut = np.where(np.abs(self.sgrb) < self.bcut)[0]
-                    dat = dat[:, bcut]
-                    # fafter = len(np.where(dat[-2, :] == 2)[0])/len(dat[0,:])
-                    print("Sgr plane cut performed")
-
-            elif self.bcut_method == "angmom":
-                print("performing plane cut")
-                dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-                                self.cxy, self.cxz, self.cyz, self.progb, np.array(self.df['gse']),
-                                np.array(self.df['sdss'])])
-
-                if self.bcut is not None:
-                    bcut = np.where(np.abs(self.progb) < self.bcut)[0]
-                    dat = dat[:, bcut]
-                    # fafter = len(np.where(dat[-2, :] == 2)[0])/len(dat[0,:])
-                    print("Stream plane cut performed")
-
-        elif self.dataset == "real":
-
-            if self.bcut_method == "Majewski":
-
-                dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-                                self.cxy, self.cxz, self.cyz, self.sgrb, np.array(self.df['gse']),
-                                np.array(self.df['sdss'])])
-                if self.bcut is not None:
-                    bcut = np.where(np.abs(self.sgrb) < self.bcut)[0]
-                    dat = dat[:, bcut]
-                    # fafter = len(np.where(dat[-2, :] == 2)[0])/len(dat[0,:])
-                    print("Sgr plane cut performed")
-
-            elif self.bcut_method == "angmom":
-                print("performing plane cut")
-                dat = np.array([self.lx, self.ly, self.lz, self.elx, self.ely, self.elz,
-                                self.cxy, self.cxz, self.cyz, self.progb])
-
-                if self.bcut is not None:
-                    bcut = np.where(np.abs(self.progb) < self.bcut)[0]
-                    dat = dat[:, bcut]
-                    # fafter = len(np.where(dat[-2, :] == 2)[0])/len(dat[0,:])
-                    print("Stream plane cut performed")
+            if self.bcut is not None:
+                bcut = np.where(np.abs(self.progb) < self.bcut)[0]
+                dat = dat[:, bcut]
+                # fafter = len(np.where(dat[-2, :] == 2)[0])/len(dat[0,:])
+                print("Stream plane cut performed")
         else:
             print("no file saved")
         # print("fraction before", fbefore, "fraction after", fafter)
