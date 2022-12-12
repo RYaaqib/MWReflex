@@ -35,7 +35,7 @@ def get_fake_params():
     """
     randarray3x3= np.random.randn(3)*10.
     #Apex longitude/lattitude [deg]
-    l,b, vtravel = 50, -30, 20
+    l,b, vtravel = 50, -30, 200
     #Mean halo spherical velocities [km/s]
     vr,vphi,vth = randarray3x3[0], randarray3x3[1], randarray3x3[2]
     #Vlos hyperparameter
@@ -50,7 +50,7 @@ def rdot(x,y,z,vx,vy,vz):
     return (x*vx + y*vy + z*vz)/(np.sqrt(x**2. + y**2. + z**2.))
 def thdot(x,y,z,vx,vy,vz):
     #azimuth
-    return (vx*y - vy*x)/(x**2. + y**2.)
+    return (x*vy - y*vx)/(x**2. + y**2.)
 def phidot(x,y,z,vx,vy,vz):
     #inclination
     return (z*(x*vx + y*vy) - (x**2. + y**2.)*vz)/((x**2. + y**2. +z**2.)*np.sqrt(x**2 + y**2.))
@@ -64,7 +64,18 @@ def cartesian_to_spherical(x,y,z,vx,vy,vz):
     phi = np.arctan2(y,x)
     th = np.arccos(z/np.sqrt(x**2 + y**2+ z**2))
     r = np.sqrt(x**2. + y**2. + z**2.)
-    return np.array([r,phi, th]), np.array([rdott, r*thdott*np.sin(th), r*phidott])
+
+    #Code part from Mpetersen
+    cost = z/r
+    sint = np.sqrt(1. - cost *cost)
+    cosp = np.cos(phi)
+    sinp = np.sin(phi)
+
+    vr = sint * (cosp * vx + sinp * vy) + cost * vz
+    vphi = (-sinp * vx + cosp * vy)
+    vtheta = (cost * (cosp * vx + sinp * vy) - sint * vz)
+
+    return np.array([r,phi, th]), np.array([vr, vphi, vtheta])
 
 def euler_xyz(phi,theta,psi=0., deg=False):
     #FUNCTION FROM MIKE PETERSEN GITHUB
@@ -112,7 +123,7 @@ def spherical_unit_vectors(phi,th):
 
 def spherical_to_cartesian(r,phi,th, vr, vphi, vth):
     ur   = np.array([np.sin(th)*np.cos(phi), np.sin(th)*np.sin(phi), (np.cos(th))])
-    uphi = np.array([-np.sin(phi), np.cos(phi), 0.])
+    uphi = np.array([-np.sin(phi), np.cos(phi), np.zeros_like(r)])
     uth  = np.array([np.cos(th)*np.cos(phi), np.cos(th)*np.sin(phi), -np.sin(th)])
 
     rcart = np.array(r*ur)
@@ -176,7 +187,7 @@ for i in range(len(x)):
     tmp = cartesian_to_spherical(rp[i, 0], rp[i, 1], rp[i, 2],
                                  vp[i, 0], vp[i, 1], vp[i, 2])
     rpsph[i, :] = tmp[0]
-    vpsph[i, :] = tmp[1] #+ add_vtravel(params[2], rpsph[i,2])
+    vpsph[i, :] = tmp[1] + add_vtravel(params[2], rpsph[i,2])
 
 #5. translate the spherical coordinates in the rotated frame back to cartesian coordinates
 # note: we don't care about the position vector anymore, we only want the velocities
@@ -204,7 +215,7 @@ v = np.zeros_like(vp)
 
 for i in range(len(x)):
     r[i,:] = rgal1[i,:] - rsun_mw
-    v[i,:] = vgal1[i,:] + np.array([params[3], params[4], params[5]]) - vsun_mw
+    v[i,:] = vgal1[i,:]  - vsun_mw + np.array([params[3], params[4], params[5]])
 
 #8. find the galactic proper motions using the unit vectors of ul, ub, ulos
 # spherical unit vectors in the galactic frame..
@@ -235,9 +246,9 @@ for i in range(len(x)):
 
     vlos[i,:]      = np.dot(v[i,:], elos[i,:])
     mul[i,:]       = np.dot(vtest[i,:], ephi[i,:])/fac[i]
-    mub[i,:]       = np.dot(vtest[i,:], eth[i,:])/fac[i]
+    mub[i,:]       = -np.dot(vtest[i,:], eth[i,:])/fac[i]
 
-
+#9. Define the likelihood functions for the perturbed velocities
 
 
 
