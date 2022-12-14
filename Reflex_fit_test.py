@@ -35,13 +35,13 @@ def get_fake_params():
     """
     randarray3x3= np.random.randn(3)*10.
     #Apex longitude/lattitude [deg]
-    l,b, vtravel = 50, -30, 200
+    l,b, vtravel = 50, -30, 32
     #Mean halo spherical velocities [km/s]
-    vr,vphi,vth = randarray3x3[0], randarray3x3[1], randarray3x3[2]
+    vr,vphi,vth = -18., -20., 14.
     #Vlos hyperparameter
-    svlos = np.random.randn()*30.
+    svlos = 90.
     #Galactic longitude/lattide velocity hyperparameters
-    sl, sb = randarray3x3[0]*0.2, randarray3x3[1]*0.7
+    sl, sb = 81., 76.
 
     return np.array([l,b,vtravel, vr,vphi,vth,svlos,sl,sb])
 
@@ -187,7 +187,7 @@ for i in range(len(x)):
     tmp = cartesian_to_spherical(rp[i, 0], rp[i, 1], rp[i, 2],
                                  vp[i, 0], vp[i, 1], vp[i, 2])
     rpsph[i, :] = tmp[0]
-    vpsph[i, :] = tmp[1] + add_vtravel(params[2], rpsph[i,2])
+    vpsph[i, :] = add_vtravel(params[2], rpsph[i,2])# + tmp[1]
 
 #5. translate the spherical coordinates in the rotated frame back to cartesian coordinates
 # note: we don't care about the position vector anymore, we only want the velocities
@@ -250,9 +250,62 @@ for i in range(len(x)):
 
 #9. Define the likelihood functions for the perturbed velocities
 
+def like_vlos(vlos_data, vlos_param, evlos, sigvlos):
+    evlos2 = evlos**2. + sigvlos**2.
+    exponent = (1./evlos2)*((vlos_data - vlos_param)**2.)
+    ln = np.log(2*np.pi*evlos2)
+    plos = -0.5*(ln + exponent)
 
+    return plos
 
+def like_pms(pml_data,pmb_data, dist, corr, epml, epmb, edist, pml_param, pmb_param, sigpml, sigpmb):
+    fac = 4.74057*dist
+    elp2 = epml ** 2. + edist ** 2. * (np.abs(pml_data) ** 2. / dist ** 2) + (sigpml ** 2. / fac ** 2.)
+    ebp2 = epmb ** 2. + edist ** 2. * (np.abs(pmb_data) ** 2. / dist ** 2) + (sigpmb ** 2. / fac ** 2.)
 
+    cov = np.array([[elp2, epml*epmb*corr],
+                    [epml*epmb*corr, ebp2]])
+
+    inv = np.linalg.inv(cov)
+    det = np.linalg.det(cov)
+
+    kl = pml_data - pml_param
+    kb = pmb_data - pmb_param
+
+    v1 = kl*inv[0,0] + kb*inv[0,1]
+    v2 = kl*inv[1,0] + kb*inv[1,1]
+
+    exp = kl*v1 + kb*v2
+    ln  = np.log(((2*np.pi)**2.)*det)
+
+    ppm = -0.5*(ln + exp)
+
+    return ppm
+
+#10. compute the likelihood function for the data and model..
+
+def likelihood():
+    #np.array([l,b,vtravel, vr,vphi,vth,svlos,sl,sb])
+    params = get_fake_params()
+
+    lnpvlos = np.zeros_like(x)
+    lnppm   = np.zeros_like(x)
+
+    lnptot  = 0.
+
+    #x [kpc]; y [kpc]; z [kpc]; vx [km/s]; vy [km/s]; vz [km/s];
+    # dL [deg]; dB [deg]; dist [kpc]; vlos [km/s]; dmul [marcsec/yr]; dmub [marcsec/yr];
+    # edist[kpc]; evlos [km/s]; edmul [marcsec/yr]; edmub [marcsec/yr];
+    # rapo [kpc]; rapo quality; sdss?
+
+    #pml_data,pmb_data, dist, corr, epml, epmb, edist, pml_param, pmb_param, sigpml, sigpmb
+    for i in range(len(x)):
+        a = like_vlos(d[i,9], vlos[i,0], d[i,13], params[6] ) + \
+            like_pms(d[i,10],d[i,11],d[i,8], 0.0, d[i,14], d[i,15], d[i,12], mul[i,0], mub[i,0], params[7], params[8])
+
+        lnptot += a
+
+    return lnptot
 
 
 
