@@ -130,3 +130,6 @@ dmypy.json
 
 #mock catalogues
 /mocks
+
+#multinest chains
+chains*
