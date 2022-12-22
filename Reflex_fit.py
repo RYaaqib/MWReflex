@@ -305,12 +305,12 @@ def Prior(cube):
 #Running the sampler
 parameters = ["l", "b", "vtravel", "vr", "vphi", "vth", "sigvlos",
             "sigmul", "sigmub"]
-prefix = "chains"
+prefix = "chains/LMC-"
 
 n_params = len(parameters)
 result = solve(LogLikelihood=LogLikelihood, Prior=Prior,
                n_dims=n_params, outputfiles_basename=prefix, verbose=True,
-               resume=False, n_live_points=100, wrapped_params=None)
+               resume=False, n_live_points=1000, wrapped_params=None)
 
 print()
 print('evidence: %(logZ).1f +- %(logZerr).1f' % result)
