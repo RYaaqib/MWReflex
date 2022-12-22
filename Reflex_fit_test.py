@@ -170,7 +170,7 @@ for i in range(len(x)):
 params = get_fake_params()
 
 
-Rrot = euler_xyz(params[0], np.pi/2. -params[1], deg=True)
+Rrot = euler_xyz(params[0], np.pi/2. - params[1], deg=True)
 rp   = np.zeros_like(rgal)
 vp   = np.zeros_like(vgal)
 
