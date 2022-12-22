@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from sys import exit
 from scipy.stats import spearmanr
-from alive_progress import alive_bar
 from astropy.coordinates import frame_transform_graph
 from astropy.coordinates.matrix_utilities import rotation_matrix, matrix_product, matrix_transpose
 import astropy.coordinates as coord
@@ -390,13 +389,13 @@ class data:
         self.evy = np.zeros(self.N)
         self.evz = np.zeros(self.N)
 
-        with alive_bar(len(self.x)) as bar:
-            for i in range(self.N):
 
-                self.evx[i], self.evy[i], self.evz[i] = mcerr(self.l[i],\
-                self.b[i], self.d[i], self.vlos[i], self.pma[i], self.pmd[i], \
-                self.ed[i], self.evlos[i], self.epma[i], self.epmd[i])
-                bar()
+        for i in range(self.N):
+
+            self.evx[i], self.evy[i], self.evz[i] = mcerr(self.l[i],\
+            self.b[i], self.d[i], self.vlos[i], self.pma[i], self.pmd[i], \
+            self.ed[i], self.evlos[i], self.epma[i], self.epmd[i])
+
         return print("velocity errors computed")
 
     def get_v_icrs(self):
@@ -404,11 +403,10 @@ class data:
         self.vy = np.zeros(self.N)
         self.vz = np.zeros(self.N)
         print("calculating velocities")
-        with alive_bar(len(self.x)) as bar:
-            for i in range(self.N):
-                self.vx[i], self.vy[i], self.vz[i] = self.v_icrs(self.l[i], self.b[i],
-                self.d[i], self.vlos[i], self.pma[i], self.pmd[i])
-                bar()
+        for i in range(self.N):
+            self.vx[i], self.vy[i], self.vz[i] = self.v_icrs(self.l[i], self.b[i],
+            self.d[i], self.vlos[i], self.pma[i], self.pmd[i])
+
         return
 
     def convert_icrs_mw_vel(self):
@@ -473,15 +471,12 @@ class data:
         self.cxz = np.zeros(self.N)
         self.cyz = np.zeros(self.N)
 
-        with alive_bar(len(self.x)) as bar:
 
-            for i in range(self.N):
-                self.elx[i], self.ely[i], self.elz[i], self.cxy[i], self.cxz[i],\
-                self.cyz[i] = mcerr(self.x[i], self.y[i], self.z[i],\
-                self.vx[i], self.vy[i], self.vz[i], self.ex[i], self.ey[i],\
-                self.ez[i], self.evx[i], self.evy[i], self.evz[i])
-                bar()
-
+        for i in range(self.N):
+            self.elx[i], self.ely[i], self.elz[i], self.cxy[i], self.cxz[i],\
+            self.cyz[i] = mcerr(self.x[i], self.y[i], self.z[i],\
+            self.vx[i], self.vy[i], self.vz[i], self.ex[i], self.ey[i],\
+            self.ez[i], self.evx[i], self.evy[i], self.evz[i])
         return print("Angular momenta errors computed")
 
     def prog_b(self, prog_L):
